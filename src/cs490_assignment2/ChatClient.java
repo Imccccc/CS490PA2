@@ -90,9 +90,11 @@ public class ChatClient implements BroadcastReceiver{
                 	continue;
                 }
                 else  if(userInput.equals("EXIT")){
+                	out.close();
+                	echoSocket.close();
                     System.exit(0);
                 }
-                else if(userInput.equals("EXIT")){
+                else if(userInput.equals("Get")){
                 	
                 }
                 else{
@@ -134,7 +136,7 @@ public class ChatClient implements BroadcastReceiver{
         @Override
         public void run() {
             try{
-                System.out.println("heartbeat|"+username);
+                //System.out.println("heartbeat|"+username);
                 out.println("heartbeat|"+username);
                 //sendGetRequest(hostName, serverPort, false);
             }
@@ -157,19 +159,20 @@ public class ChatClient implements BroadcastReceiver{
     	public void run(){
     		try{
     			if((serverMessage = in.readLine())!= null){
-    	            String[] temp = serverMessage.split("\\:");
-    	            System.out.println("Server message: "+ temp[0] + " " +temp[1]);
+    	            String[] temp = serverMessage.split("\\-");
+    	            System.out.println(serverMessage+" Server message: "+ temp[0] + " " +temp[1]);
     	            String[] m_info = temp[1].split("\\,");
-    	            if(temp.equals("New:")){
+    	            if(temp[0].equals("New")){
     	            	//add memeber;
-    	            	System.out.println("have new member: " + m_info[0]);
     	                if(isFIFO){
+        	            	System.out.println("have new member(FIFO): " + m_info[0]);
     	                	frBroadcast.addMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
-    	                }else{
+    	                }else{    	            	
+    	                	System.out.println("have new member(re): " + m_info[0]);
     	                	rBroadcast.addMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
     	                }
     	            }
-    	            else if(temp.equals("Remove:")){
+    	            else if(temp[0].equals("Remove")){
     	            	//remove member;
     	            	System.out.println("remove member: " + m_info[0]);
     	                if(isFIFO){
