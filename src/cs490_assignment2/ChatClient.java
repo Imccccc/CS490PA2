@@ -77,7 +77,7 @@ public class ChatClient implements BroadcastReceiver{
             
             System.out.println("After Initialization");
             // Use timer to send heartbeat every heartbeat_rate milliseconds
-            TimerTask task = new TimerTask_heartbeat(hostName, serverPort, username);
+            TimerTask task = new TimerTask_heartbeat(out, in);
             timer.schedule(task, 0, (heartbeat_rate-100)); 
             
             int seq = 0;
@@ -112,6 +112,81 @@ public class ChatClient implements BroadcastReceiver{
         }
     }
     
+    static class TimerTask_heartbeat extends TimerTask{
+        String hostName = "localhost";
+        int serverPort = 1234;
+        PrintWriter out;
+        BufferedReader in;
+        String username;
+        
+    	public TimerTask_heartbeat(PrintWriter out, BufferedReader in){
+    		this.out = out;
+    		this.in = in;
+    	}
+        
+    	public void setID(String s){
+    		this.username = s;
+    	}
+        @Override
+        public void run() {
+            try{
+                out.println("heartbeat|"+username);
+                sendGetRequest(hostName, serverPort, false);
+            }
+            catch(Exception e){
+                
+            }
+        }
+    }
+    
+    static class messageHandler extends Thread{
+        String hostName = "localhost";
+        int serverPort = 1234;
+        PrintWriter out;
+        BufferedReader in;
+        String serverMessage;
+    	public messageHandler(PrintWriter out, BufferedReader in){
+    		this.out = out;
+    		this.in = in;
+    	}
+    	public void run(){
+    		try{
+    			if((serverMessage = in.readLine())!= null){
+    	            String[] temp = serverMessage.split("\\:");
+    	            System.out.println(temp[0] + " " +temp[1]);
+    	            String[] m_info = temp[1].split("\\,");
+    	            if(temp.equals("New:")){
+    	            	//add memeber;
+    	                if(isFIFO){
+    	                	frBroadcast.addMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
+    	                }else{
+    	                	rBroadcast.addMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
+    	                }
+    	            }
+    	            else if(temp.equals("Remove:")){
+    	            	//remove member;
+    	                if(isFIFO){
+    	                	frBroadcast.removeMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
+    	                }else{
+    	                	rBroadcast.removeMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
+    	                }
+    	            }
+    			}
+    		}
+    		catch(Exception e){
+    			System.out.println("messageHandler exception");
+    			e.printStackTrace();
+    		}
+    	}
+    	
+    }
+
+	@Override
+	public void reveive(Message m) {
+		String info[] = m.getMessageContents().split("\\|"); //String format username|content
+		System.out.println(info[0] + ": " +info[1]);		
+	}
+
     private static void sendGetRequest(String hostName, int serverPort, boolean isPrint) throws IOException{
         Socket echoSocket = new Socket(hostName, serverPort);
         PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
@@ -152,39 +227,4 @@ public class ChatClient implements BroadcastReceiver{
             System.out.println("**********Group get Done**************\n");
         echoSocket.close();
     }
-    
-    static class TimerTask_heartbeat extends TimerTask{
-        String hostName;
-        int heartbeat_rate;
-        int serverPort;
-        Socket echoSocket;
-        String username;
-        
-        public TimerTask_heartbeat(String hostName, int serverPort, String username){
-            this.hostName = hostName;
-            this.serverPort = serverPort;
-            this.username = username;
-        }
-        
-        @Override
-        public void run() {
-            try{
-                echoSocket = new Socket(hostName, serverPort);
-                PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-                out.println("heartbeat|"+username);
-                sendGetRequest(hostName, serverPort, false);
-            }
-            catch(Exception e){
-                
-            }
-        }
-        
-    }
-
-	@Override
-	public void reveive(Message m) {
-		String info[] = m.getMessageContents().split("\\|"); //String format username|content
-		System.out.println(info[0] + ": " +info[1]);		
-	}
-
 }

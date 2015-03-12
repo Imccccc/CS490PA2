@@ -69,72 +69,70 @@ public class MultithreadedChatServer {
 		
 		public void run(){
 			try{
-				try{
-	                //System.out.println("Spawn to handle");
+				if(socket.isClosed()){
+					System.out.println(clientID+": Socket is closed");
+				}
+                //System.out.println("Spawn to handle");
 
-	                // Get message from client
-	                String message;
-	                message = in.readLine();
-	                //System.out.println(message);
-	                
-	                // Split the message by '|'
-	                String[] m_info = message.split("\\|");
-	                //System.out.printf("0: %s\t1: %s\n", m_info[0], m_info[1]);
-	                
-	                // Handle message
-	                if(m_info[0].equals("REGISTER")){
-	                    String[] r_info = m_info[1].split(",");
-	                    if(group.containsKey(r_info[0])){
-	                        // Decline it
-	                        out.println("ERROR");
-	                        System.out.println("Duplicate name in group!");
-	                    }
-	                    else{
-	                    	setID(r_info[0]);
-	                    	Process newclient = new Process(socket.getRemoteSocketAddress().toString(), Integer.parseInt(r_info[1]), r_info[0]);
-	                    	for(Map.Entry<String, PrintWriter> c: outChannel.entrySet()){
-	                    		c.getValue().println("New:"+newclient.getID()+","+newclient.getIP()+","+newclient.getPort());
-	                    	}
-	                    	group.put(r_info[0], newclient);
-	                    	outChannel.put(r_info[0], out);
-	                        hbMap.put(r_info[0], true);
-	                        out.println(socket.getRemoteSocketAddress().toString());
-	                        //System.out.println("Register successfully");
-	                    }
-	                }
-	                else if(m_info[0].equals("heartbeat")){
-	                    // Update correspond clint's last heartbeat time
-	                	String name = m_info[1];
-	            		if(hbMap.containsKey(name)){
-	            			hbMap.put(name, true);
-	            	//		System.out.println("receive a HEARTBEAT from "+name);
-	            		}
-	            		else{
-	            	//		System.out.println("receive a HEARTBEAT from "+name+", which is not in the group");
-	            		}
-	                }
-	                else if(m_info[0].equals("GET")){
-	                    //System.out.println("Receive get group info request");
-	                    // Send group information back to client
-	                    StringBuilder sBuilder = new StringBuilder();             
-	                    for(Map.Entry<String, Process> entry : group.entrySet()){
-	                        Process m = entry.getValue();
-	                        sBuilder.append(m.getID()+","+m.getIP()+","+m.getPort()+"|");
-	                    }
-	                    // Format: Name,IP,Port|Name,IP,Port|....|Name,IP,Port|
-	                    String returnMessage = sBuilder.toString();
-	                    
-	                    out.println("Group:"+returnMessage);
-	                    //System.out.println(returnMessage);
-	                }
-	                else{
-	                    //Invalid message
-	                    System.out.println("Invalid message: "+message);
-	                }
-				}
-				finally{
-					socket.close();
-				}
+                // Get message from client
+                String message;
+                message = in.readLine();
+                //System.out.println(message);
+                
+                // Split the message by '|'
+                String[] m_info = message.split("\\|");
+                //System.out.printf("0: %s\t1: %s\n", m_info[0], m_info[1]);
+                
+                // Handle message
+                if(m_info[0].equals("REGISTER")){
+                    String[] r_info = m_info[1].split(",");
+                    if(group.containsKey(r_info[0])){
+                        // Decline it
+                        out.println("ERROR");
+                        System.out.println("Duplicate name in group!");
+                    }
+                    else{
+                    	setID(r_info[0]);
+                    	Process newclient = new Process(socket.getRemoteSocketAddress().toString(), Integer.parseInt(r_info[1]), r_info[0]);
+                    	for(Map.Entry<String, PrintWriter> c: outChannel.entrySet()){
+                    		c.getValue().println("New:"+newclient.getID()+","+newclient.getIP()+","+newclient.getPort());
+                    	}
+                    	group.put(r_info[0], newclient);
+                    	outChannel.put(r_info[0], out);
+                        hbMap.put(r_info[0], true);
+                        out.println(socket.getRemoteSocketAddress().toString());
+                        //System.out.println("Register successfully");
+                    }
+                }
+                else if(m_info[0].equals("heartbeat")){
+                    // Update correspond clint's last heartbeat time
+                	String name = m_info[1];
+            		if(hbMap.containsKey(name)){
+            			hbMap.put(name, true);
+            	//		System.out.println("receive a HEARTBEAT from "+name);
+            		}
+            		else{
+            	//		System.out.println("receive a HEARTBEAT from "+name+", which is not in the group");
+            		}
+                }
+                else if(m_info[0].equals("GET")){
+                    //System.out.println("Receive get group info request");
+                    // Send group information back to client
+                    StringBuilder sBuilder = new StringBuilder();             
+                    for(Map.Entry<String, Process> entry : group.entrySet()){
+                        Process m = entry.getValue();
+                        sBuilder.append(m.getID()+","+m.getIP()+","+m.getPort()+"|");
+                    }
+                    // Format: Name,IP,Port|Name,IP,Port|....|Name,IP,Port|
+                    String returnMessage = sBuilder.toString();
+                    
+                    out.println("Group:"+returnMessage);
+                    //System.out.println(returnMessage);
+                }
+                else{
+                    //Invalid message
+                    System.out.println("Invalid message: "+message);
+                }
 			}
 			catch(Exception e){
 				e.printStackTrace();
