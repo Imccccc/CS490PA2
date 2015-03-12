@@ -77,8 +77,11 @@ public class ChatClient implements BroadcastReceiver{
             
             System.out.println("After Initialization");
             // Use timer to send heartbeat every heartbeat_rate milliseconds
-            TimerTask task = new TimerTask_heartbeat(out, in);
+            TimerTask_heartbeat task = new TimerTask_heartbeat(out, in, username);
+            task.setID(username);
             timer.schedule(task, 0, (heartbeat_rate-100)); 
+            messageHandler handler = new messageHandler(out, in);
+            handler.start();
             
             int seq = 0;
             
@@ -119,9 +122,10 @@ public class ChatClient implements BroadcastReceiver{
         BufferedReader in;
         String username;
         
-    	public TimerTask_heartbeat(PrintWriter out, BufferedReader in){
+    	public TimerTask_heartbeat(PrintWriter out, BufferedReader in, String s){
     		this.out = out;
     		this.in = in;
+    		this.username = s;
     	}
         
     	public void setID(String s){
@@ -130,8 +134,9 @@ public class ChatClient implements BroadcastReceiver{
         @Override
         public void run() {
             try{
+                System.out.println("heartbeat|"+username);
                 out.println("heartbeat|"+username);
-                sendGetRequest(hostName, serverPort, false);
+                //sendGetRequest(hostName, serverPort, false);
             }
             catch(Exception e){
                 
@@ -153,10 +158,11 @@ public class ChatClient implements BroadcastReceiver{
     		try{
     			if((serverMessage = in.readLine())!= null){
     	            String[] temp = serverMessage.split("\\:");
-    	            System.out.println(temp[0] + " " +temp[1]);
+    	            System.out.println("Server message: "+ temp[0] + " " +temp[1]);
     	            String[] m_info = temp[1].split("\\,");
     	            if(temp.equals("New:")){
     	            	//add memeber;
+    	            	System.out.println("have new member: " + m_info[0]);
     	                if(isFIFO){
     	                	frBroadcast.addMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
     	                }else{
@@ -165,6 +171,7 @@ public class ChatClient implements BroadcastReceiver{
     	            }
     	            else if(temp.equals("Remove:")){
     	            	//remove member;
+    	            	System.out.println("remove member: " + m_info[0]);
     	                if(isFIFO){
     	                	frBroadcast.removeMember(new Process(m_info[1], Integer.parseInt(m_info[2]), m_info[0]));
     	                }else{
